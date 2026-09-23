@@ -1,0 +1,4 @@
+:HL["/algebra2-saxon/_next/static/chunks/1r6_a_bbwkcu8.css","style"]
+:HL["/algebra2-saxon/_next/static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/algebra2-saxon/_next/static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"lesson","param":null,"prefetchHints":4192,"slots":{"children":{"name":"number","param":{"type":"d","key":"1152","siblings":[]},"prefetchHints":4192,"slots":{"children":{"name":"preview","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}}}},"staleTime":300,"buildId":"crLipBGckL4CnBnLRY1zN"}
