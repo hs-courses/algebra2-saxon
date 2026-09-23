@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const isGhPagesExport = process.env.GH_PAGES_EXPORT === "true";
+const basePath = process.env.GH_PAGES_BASE_PATH ?? "";
+
+const nextConfig: NextConfig = isGhPagesExport
+  ? {
+      output: "export",
+      basePath,
+      images: { unoptimized: true },
+    }
+  : {};
 
 export default nextConfig;

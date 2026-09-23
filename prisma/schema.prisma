@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  progress  UserProgress[]
+  attempts  Attempt[]
+  mastery   SkillMastery[]
+}
+
+model Skill {
+  id             String   @id
+  name           String
+  description    String
+  firstLessonNum Int
+
+  problems Problem[]
+  mastery  SkillMastery[]
+}
+
+model Lesson {
+  id            String   @id
+  number        Int      @unique
+  title         String
+  status        String   @default("draft") // draft | authored
+  conceptMd     String?
+  newSkillId    String?
+  workedExamplesJson String? // JSON array
+
+  problems Problem[]
+  progress UserProgress[]
+}
+
+model Problem {
+  id            String  @id
+  lessonId      String
+  skillId       String
+  context       String  // lessonPractice | mixedPractice | test
+  prompt        String
+  answer        String
+  choicesJson   String? // JSON array, optional (open response if null)
+  solutionMd    String
+  difficulty    Int     @default(1)
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  skill  Skill  @relation(fields: [skillId], references: [id])
+  attempts Attempt[]
+}
+
+model TestBlock {
+  id               String @id
+  afterLessonNumber Int   @unique
+  title            String
+  problemIdsJson   String // JSON array of Problem ids
+}
+
+model UserProgress {
+  id                  String    @id @default(cuid())
+  userId              String
+  lessonId            String
+  completedAt         DateTime?
+  lessonPracticeScore Float?
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model Attempt {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String
+  correct   Boolean
+  context   String   // lessonPractice | mixedPractice | test
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+}
+
+model SkillMastery {
+  id                String @id @default(cuid())
+  userId            String
+  skillId           String
+  exposureCount     Int    @default(0)
+  correctCount      Int    @default(0)
+  lastSeenLessonNum Int    @default(0)
+
+  user  User  @relation(fields: [userId], references: [id])
+  skill Skill @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId])
+}

@@ -1,0 +1,33 @@
+import { lesson01 } from "./lesson-01";
+import { lesson02 } from "./lesson-02";
+import { lesson03 } from "./lesson-03";
+import { lesson04 } from "./lesson-04";
+import { lesson05 } from "./lesson-05";
+import { lesson06 } from "./lesson-06";
+import { lesson07 } from "./lesson-07";
+import { lesson08 } from "./lesson-08";
+import { lesson09 } from "./lesson-09";
+import { lesson10 } from "./lesson-10";
+import { skeletonLessons } from "./skeleton";
+import { LessonDef } from "../types";
+
+export const authoredLessons: LessonDef[] = [
+  lesson01,
+  lesson02,
+  lesson03,
+  lesson04,
+  lesson05,
+  lesson06,
+  lesson07,
+  lesson08,
+  lesson09,
+  lesson10,
+];
+
+export const ALL_LESSONS: LessonDef[] = [...authoredLessons, ...skeletonLessons].sort(
+  (a, b) => a.number - b.number
+);
+
+export function lessonByNumber(n: number): LessonDef | undefined {
+  return ALL_LESSONS.find((l) => l.number === n);
+}
