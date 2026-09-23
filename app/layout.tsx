@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { prisma } from "@/lib/db";
-import { getOrCreateLocalUser } from "@/lib/user";
+import { getSessionUser } from "@/lib/session";
 import { AppShell } from "@/components/AppShell";
 import { ALL_LESSONS } from "@/content/lessons/index";
 import { ALL_TEST_BLOCKS } from "@/content/tests/index";
@@ -30,13 +30,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   let nextLessonNumber = STATIC_DEMO ? Number.MAX_SAFE_INTEGER : 1;
 
   if (!STATIC_DEMO) {
-    const user = await getOrCreateLocalUser();
-    const progress = await prisma.userProgress.findMany({
-      where: { userId: user.id, completedAt: { not: null } },
-      include: { lesson: true },
-    });
-    completedNumbers = progress.map((p) => p.lesson.number);
-    nextLessonNumber = completedNumbers.length > 0 ? Math.max(...completedNumbers) + 1 : 1;
+    const user = await getSessionUser();
+    if (user) {
+      const progress = await prisma.userProgress.findMany({
+        where: { userId: user.id, completedAt: { not: null } },
+        include: { lesson: true },
+      });
+      completedNumbers = progress.map((p) => p.lesson.number);
+      nextLessonNumber = completedNumbers.length > 0 ? Math.max(...completedNumbers) + 1 : 1;
+    }
   }
 
   return (

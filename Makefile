@@ -1,8 +1,10 @@
 .DEFAULT_GOAL := help
-.PHONY: help install dev build start lint typecheck db-generate db-push db-studio db-seed db-reset clean gh-repo-create publish
+.PHONY: help install dev build start lint typecheck db-generate db-push db-studio db-seed db-reset clean gh-repo-create publish docker-build docker-push k8s-apply k8s-rollout deploy-k8s
 
 ORG ?= hs-courses
 REPO_NAME ?= algebra2-saxon
+DOCKER_IMAGE ?= logycon/algebra2-saxon:latest
+K8S_NAMESPACE ?= algebra2
 
 help: ## Show this help
 	@echo "Algebra 2 (Saxon Method) — available targets:"
@@ -50,3 +52,18 @@ gh-repo-create: ## Create the GitHub repo (ORG=hs-courses REPO_NAME=algebra2-sax
 
 publish: ## Build a static, DB-free demo export and publish it to GitHub Pages (ORG=hs-courses REPO_NAME=algebra2-saxon)
 	ORG=$(ORG) REPO_NAME=$(REPO_NAME) ./scripts/publish-gh-pages.sh
+
+docker-build: ## Build the production image for the k8s cluster (linux/amd64)
+	docker build --platform linux/amd64 -t $(DOCKER_IMAGE) .
+
+docker-push: ## Push the production image to Docker Hub
+	docker push $(DOCKER_IMAGE)
+
+k8s-apply: ## Apply/update the k8s manifests (namespace, PVC, deployment, service, ingress)
+	kubectl apply -f k8s/namespace.yaml -f k8s/pvc.yaml -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/ingress.yaml
+
+k8s-rollout: ## Force the deployment to pull the latest image and restart
+	kubectl -n $(K8S_NAMESPACE) rollout restart deployment/algebra2
+	kubectl -n $(K8S_NAMESPACE) rollout status deployment/algebra2 --timeout=120s
+
+deploy-k8s: docker-build docker-push k8s-apply k8s-rollout ## Full deploy: build, push, apply manifests, restart rollout

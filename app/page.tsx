@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getOrCreateLocalUser } from "@/lib/user";
+import { getSessionUser } from "@/lib/session";
 import { seedDatabase } from "@/lib/seed";
 import { ProgressTrack } from "@/components/ProgressTrack";
 import { ALL_LESSONS } from "@/content/lessons/index";
@@ -17,13 +17,15 @@ export default async function Dashboard() {
       await seedDatabase();
     }
 
-    const user = await getOrCreateLocalUser();
-    const progress = await prisma.userProgress.findMany({
-      where: { userId: user.id, completedAt: { not: null } },
-      include: { lesson: true },
-    });
-    completedNumbers = progress.map((p) => p.lesson.number);
-    nextLessonNumber = completedNumbers.length > 0 ? Math.max(...completedNumbers) + 1 : 1;
+    const user = await getSessionUser();
+    if (user) {
+      const progress = await prisma.userProgress.findMany({
+        where: { userId: user.id, completedAt: { not: null } },
+        include: { lesson: true },
+      });
+      completedNumbers = progress.map((p) => p.lesson.number);
+      nextLessonNumber = completedNumbers.length > 0 ? Math.max(...completedNumbers) + 1 : 1;
+    }
   }
   const authoredCount = ALL_LESSONS.filter((l) => l.status === "authored").length;
 
@@ -35,8 +37,8 @@ export default async function Dashboard() {
       </p>
       {STATIC_DEMO && (
         <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Static demo build — all lessons are unlocked for browsing, but progress/scores aren&apos;t saved. Run locally
-          (see README) for the full app.
+          Static demo build — all lessons are unlocked for browsing. Progress saves to this browser only (no
+          account). Run locally (see README) for the full app with email-based cross-device progress.
         </p>
       )}
 

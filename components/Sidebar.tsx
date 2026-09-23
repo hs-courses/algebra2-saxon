@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { STATIC_DEMO } from "@/lib/staticDemo";
+import { getLocalCompletedLessons, onLocalProgressChange, resetLocalProgress } from "@/lib/localProgress";
+import { getStoredEmail, setStoredEmail } from "@/lib/studentEmail";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type LessonNavItem = {
   number: number;
@@ -22,7 +27,35 @@ export function Sidebar({ lessons, testAfterLessons, completedNumbers, nextLesso
   const pathname = usePathname();
   const router = useRouter();
   const [resetting, setResetting] = useState(false);
-  const completed = new Set(completedNumbers);
+  const [localCompleted, setLocalCompleted] = useState<number[]>([]);
+  const [email, setEmail] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailError, setEmailError] = useState(false);
+
+  useEffect(() => {
+    if (!STATIC_DEMO) return;
+    setLocalCompleted(getLocalCompletedLessons());
+    return onLocalProgressChange(() => setLocalCompleted(getLocalCompletedLessons()));
+  }, []);
+
+  useEffect(() => {
+    if (STATIC_DEMO) return;
+    setEmail(getStoredEmail());
+  }, []);
+
+  function saveEmail() {
+    const trimmed = emailInput.trim();
+    if (!EMAIL_RE.test(trimmed)) {
+      setEmailError(true);
+      return;
+    }
+    setStoredEmail(trimmed);
+    setEmail(trimmed);
+    setEmailError(false);
+    router.refresh();
+  }
+
+  const completed = new Set(STATIC_DEMO ? localCompleted : completedNumbers);
   const testSet = new Set(testAfterLessons);
 
   async function resetProgress() {
@@ -30,7 +63,17 @@ export function Sidebar({ lessons, testAfterLessons, completedNumbers, nextLesso
       return;
     }
     setResetting(true);
-    await fetch("/api/progress/reset", { method: "DELETE" });
+    if (STATIC_DEMO) {
+      resetLocalProgress();
+      setResetting(false);
+      router.push("/");
+      return;
+    }
+    await fetch("/api/progress/reset", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
     setResetting(false);
     router.push("/");
     router.refresh();
@@ -43,6 +86,35 @@ export function Sidebar({ lessons, testAfterLessons, completedNumbers, nextLesso
           Algebra 2 — Saxon
         </Link>
       </div>
+
+      {!STATIC_DEMO && !email && (
+        <div className="border-b border-amber-200 bg-amber-50 p-3">
+          <p className="mb-2 text-xs font-medium text-amber-900">Enter your email to save progress</p>
+          <div className="flex gap-1.5">
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => {
+                setEmailInput(e.target.value);
+                setEmailError(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && saveEmail()}
+              placeholder="you@example.com"
+              className="min-w-0 flex-1 rounded border border-amber-300 px-2 py-1 text-xs"
+            />
+            <button
+              onClick={saveEmail}
+              className="shrink-0 rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white"
+            >
+              Save
+            </button>
+          </div>
+          {emailError && <p className="mt-1 text-xs text-rose-600">Enter a valid email.</p>}
+        </div>
+      )}
+      {!STATIC_DEMO && email && (
+        <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">Signed in as {email}</div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-2">
         {lessons.map((lesson) => {

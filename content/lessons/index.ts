@@ -8,6 +8,22 @@ import { lesson07 } from "./lesson-07";
 import { lesson08 } from "./lesson-08";
 import { lesson09 } from "./lesson-09";
 import { lesson10 } from "./lesson-10";
+import { lesson11 } from "./lesson-11";
+import { lesson12 } from "./lesson-12";
+import { lesson13 } from "./lesson-13";
+import { lesson14 } from "./lesson-14";
+import { lesson15 } from "./lesson-15";
+import { lesson16 } from "./lesson-16";
+import { lesson17 } from "./lesson-17";
+import { lesson18 } from "./lesson-18";
+import { lesson19 } from "./lesson-19";
+import { lesson20 } from "./lesson-20";
+import { lesson21 } from "./lesson-21";
+import { lesson22 } from "./lesson-22";
+import { lesson23 } from "./lesson-23";
+import { lesson24 } from "./lesson-24";
+import { lesson25 } from "./lesson-25";
+import { lesson26 } from "./lesson-26";
 import { skeletonLessons } from "./skeleton";
 import { LessonDef } from "../types";
 
@@ -22,11 +38,30 @@ export const authoredLessons: LessonDef[] = [
   lesson08,
   lesson09,
   lesson10,
+  lesson11,
+  lesson12,
+  lesson13,
+  lesson14,
+  lesson15,
+  lesson16,
+  lesson17,
+  lesson18,
+  lesson19,
+  lesson20,
+  lesson21,
+  lesson22,
+  lesson23,
+  lesson24,
+  lesson25,
+  lesson26,
 ];
 
-export const ALL_LESSONS: LessonDef[] = [...authoredLessons, ...skeletonLessons].sort(
-  (a, b) => a.number - b.number
-);
+const authoredNumbers = new Set(authoredLessons.map((l) => l.number));
+
+export const ALL_LESSONS: LessonDef[] = [
+  ...authoredLessons,
+  ...skeletonLessons.filter((l) => !authoredNumbers.has(l.number)),
+].sort((a, b) => a.number - b.number);
 
 export function lessonByNumber(n: number): LessonDef | undefined {
   return ALL_LESSONS.find((l) => l.number === n);

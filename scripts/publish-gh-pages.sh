@@ -25,6 +25,8 @@ if [ -d app/api ]; then
   mv app/api app/_api-disabled
 fi
 
+rm -rf .next out
+
 echo "Building static export (GH_PAGES_EXPORT=true, basePath=$BASE_PATH)..."
 GH_PAGES_EXPORT=true GH_PAGES_BASE_PATH="$BASE_PATH" NEXT_PUBLIC_STATIC_DEMO=true npx next build
 

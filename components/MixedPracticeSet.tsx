@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProblemCard } from "./ProblemCard";
+import { getStoredEmail } from "@/lib/studentEmail";
+import { getLocalCompletedLessons, markLessonCompleteLocally } from "@/lib/localProgress";
 
 type ProblemView = {
   id: string;
@@ -24,6 +26,15 @@ export function MixedPracticeSet({ lessonId, lessonNumber, lessonPractice, mixed
   const [results, setResults] = useState<Record<string, boolean>>({});
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [hasEmail, setHasEmail] = useState(false);
+
+  useEffect(() => {
+    if (readOnly) {
+      setCompleted(getLocalCompletedLessons().includes(lessonNumber));
+    } else {
+      setHasEmail(getStoredEmail() !== null);
+    }
+  }, [readOnly, lessonNumber]);
 
   const allProblems = useMemo(() => [...lessonPractice, ...mixedPractice], [lessonPractice, mixedPractice]);
   const attemptedCount = Object.keys(results).length;
@@ -40,11 +51,18 @@ export function MixedPracticeSet({ lessonId, lessonNumber, lessonPractice, mixed
   }
 
   async function completeLesson() {
+    if (readOnly) {
+      markLessonCompleteLocally(lessonNumber);
+      setCompleted(true);
+      return;
+    }
+    const email = getStoredEmail();
+    if (!email) return;
     setCompleting(true);
     await fetch("/api/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lessonId, lessonPracticeScore }),
+      body: JSON.stringify({ lessonId, lessonPracticeScore, email }),
     });
     setCompleting(false);
     setCompleted(true);
@@ -95,23 +113,23 @@ export function MixedPracticeSet({ lessonId, lessonNumber, lessonPractice, mixed
       </section>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-6">
-        {readOnly ? (
-          <span className="text-sm text-slate-500">Demo mode — progress isn&apos;t saved.</span>
-        ) : (
-          <>
-            <button
-              onClick={completeLesson}
-              disabled={!allAttempted || completing || completed}
-              className="rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              {completed ? "Lesson Complete ✓" : completing ? "Saving…" : "Mark Lesson Complete"}
-            </button>
-            {!allAttempted && (
-              <span className="text-sm text-slate-500">
-                {attemptedCount}/{allProblems.length} problems attempted
-              </span>
-            )}
-          </>
+        <button
+          onClick={completeLesson}
+          disabled={!allAttempted || completing || completed || (!readOnly && !hasEmail)}
+          className="rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          {completed ? "Lesson Complete ✓" : completing ? "Saving…" : "Mark Lesson Complete"}
+        </button>
+        {!allAttempted && (
+          <span className="text-sm text-slate-500">
+            {attemptedCount}/{allProblems.length} problems attempted
+          </span>
+        )}
+        {allAttempted && !readOnly && !hasEmail && (
+          <span className="text-sm text-amber-600">Enter your email in the sidebar to save this.</span>
+        )}
+        {readOnly && (
+          <span className="text-xs text-slate-400">Saved to this browser only.</span>
         )}
       </div>
     </div>

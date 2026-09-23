@@ -1,29 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getOrCreateLocalUser } from "@/lib/user";
-
-export async function GET() {
-  const user = await getOrCreateLocalUser();
-  const progress = await prisma.userProgress.findMany({
-    where: { userId: user.id },
-    include: { lesson: true },
-    orderBy: { lesson: { number: "asc" } },
-  });
-  const completedNumbers = progress.filter((p) => p.completedAt).map((p) => p.lesson.number);
-  const nextLessonNumber = completedNumbers.length > 0 ? Math.max(...completedNumbers) + 1 : 1;
-
-  return NextResponse.json({ completedNumbers, nextLessonNumber });
-}
+import { getOrCreateUserByEmail } from "@/lib/user";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { lessonId, lessonPracticeScore } = body as { lessonId: string; lessonPracticeScore: number };
+  const { lessonId, lessonPracticeScore, email } = body as {
+    lessonId: string;
+    lessonPracticeScore: number;
+    email: string;
+  };
 
-  if (!lessonId || typeof lessonPracticeScore !== "number") {
+  if (!lessonId || typeof lessonPracticeScore !== "number" || !email) {
     return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
   }
 
-  const user = await getOrCreateLocalUser();
+  let user;
+  try {
+    user = await getOrCreateUserByEmail(email);
+  } catch {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  }
 
   const progress = await prisma.userProgress.upsert({
     where: { userId_lessonId: { userId: user.id, lessonId } },

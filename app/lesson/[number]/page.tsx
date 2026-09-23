@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getOrCreateLocalUser } from "@/lib/user";
+import { getSessionUser } from "@/lib/session";
 import { selectMixedPractice } from "@/lib/mixedPractice";
 import { LessonInstruction } from "@/components/LessonInstruction";
 import { MixedPracticeSet } from "@/components/MixedPracticeSet";
@@ -48,13 +48,18 @@ export default async function LessonPage({ params }: { params: Promise<{ number:
   const lesson = await prisma.lesson.findUnique({ where: { number: lessonNumber } });
   if (!lesson || lesson.status !== "authored") notFound();
 
-  const user = await getOrCreateLocalUser();
+  const user = await getSessionUser();
 
   const lessonPracticeProblems = await prisma.problem.findMany({
     where: { lessonId: lesson.id, context: "lessonPractice" },
   });
 
-  const mixedPracticeIds = await selectMixedPractice(user.id, lessonNumber, lesson.newSkillId, MIXED_PRACTICE_TARGET);
+  const mixedPracticeIds = await selectMixedPractice(
+    user?.id ?? "anonymous",
+    lessonNumber,
+    lesson.newSkillId,
+    MIXED_PRACTICE_TARGET
+  );
   const mixedPracticeProblems = await prisma.problem.findMany({
     where: { id: { in: mixedPracticeIds } },
   });

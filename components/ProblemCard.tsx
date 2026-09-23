@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getStoredEmail } from "@/lib/studentEmail";
 
 type Props = {
   problemId: string;
@@ -23,11 +24,13 @@ export function ProblemCard({ problemId, prompt, answer, solutionMd, lessonNumbe
     setGraded(correct ? "correct" : "incorrect");
     onGraded?.(correct);
     if (!persist) return;
+    const email = getStoredEmail();
+    if (!email) return;
     try {
       await fetch("/api/attempt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problemId, correct, context, lessonNumber }),
+        body: JSON.stringify({ problemId, correct, context, lessonNumber, email }),
       });
     } catch {
       // Best-effort persistence — grading already happened client-side above.
